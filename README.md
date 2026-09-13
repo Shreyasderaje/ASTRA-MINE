@@ -134,4 +134,5 @@ project stronger, not weaker.
 - Water-to-propellant is a **modelled pathway** (the dashboard computes
   theoretical electrolysis yield) — we never produce real H₂/O₂.
 
-— Built with ZCode, 2026.
+© 2026 SUDARSHAN — SPPN Space Research Team
+(Shreyas Deraje · Pruthviraj Anchan · Puneeth · Naveen M)
