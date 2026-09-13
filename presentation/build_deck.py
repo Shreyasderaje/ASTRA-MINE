@@ -510,17 +510,22 @@ txt(s, M, 5.85, 12.2, 0.6,
 s = slide_new(); kicker(s, "What it takes"); title(s, "Budget & Team Roles")
 footer(s, 13)
 box(s, M, 1.72, 5.4, 4.85, fill=PANEL)
-txt(s, M + 0.3, 1.95, 4.8, 0.3, "BUDGET (REALISTIC, STUDENT-SCALE)", size=11, color=PRIMARY, bold=True)
-txt(s, M + 0.3, 2.32, 4.8, 0.8, "\u20b935k \u2013 \u20b950k", size=44, color=WHITE, bold=True)
-txt(s, M + 0.3, 3.25, 4.8, 0.4, "recommended build  \u00b7  \u20b920k\u201330k minimum viable", size=11.5, color=MUTED)
-split = [("Mobility (chassis, motors, wheels, driver)", 2.6), ("Power (3S pack, BMS, buck)", 2.0),
-         ("Brain (Pi 5 kit + camera)", 2.3), ("Sensors (IMU, INA219, ToF, encoders)", 2.4),
-         ("Station node + scoop + testbed", 2.2)]
-yy = 3.82
+txt(s, M + 0.3, 1.95, 4.8, 0.3, "BUDGET — STUDENT JUGAAD BUILD", size=11, color=PRIMARY, bold=True)
+txt(s, M + 0.3, 2.32, 4.8, 0.8, "\u20b95k \u2013 \u20b99k", size=44, color=GREEN, bold=True)
+txt(s, M + 0.3, 3.25, 4.8, 0.4, "same science  \u00b7  ~20% of the \u20b935k\u201350k recommended build", size=11.5, color=MUTED)
+split = [
+    ("Brain: Pi Zero 2 W or ESP32-CAM + laptop", 3.1),
+    ("BO motors + DIY plywood chassis", 2.6),
+    ("Printed-paper encoder discs", 2.2),
+    ("UPS battery + BMS (reclaimed)", 2.4),
+    ("HC-SR04 / bump detection", 2.1),
+    ("Kitchen scale + tarpaulin testbed", 2.5),
+]
+yy = 3.74
 for t, w in split:
-    chip(s, M + 0.3, yy, w, t, size=9.5, fill=PANEL2); yy += 0.44
-txt(s, M + 0.3, 6.08, 4.85, 0.4, "No LiDAR, no lab-grade simulant \u2014 scope discipline is the budget strategy.",
-    size=10.5, color=MUTED, spacing=1.05)
+    chip(s, M + 0.3, yy, w, t, size=9.5, fill=PANEL2); yy += 0.40
+txt(s, M + 0.3, 6.16, 4.85, 0.4, "Frugal engineering is real space engineering \u2014 Mangalyaan cost less than a movie about Mars.",
+    size=10.5, color=ACCENT, italic=True, spacing=1.05)
 roles = [
     ("Shreyas Deraje", "TEAM LEAD \u00b7 AI & SYSTEM ARCHITECTURE", "mission optimizer, perception, integration, research lead"),
     ("Pruthviraj Anchan", "ROBOTICS & MECHANISMS", "chassis, drivetrain, scoop design, testbed construction"),
