@@ -69,22 +69,30 @@ discussion section:
 
 ### Scale sensitivity study (why the optimizer matters more "on the Moon")
 
-On a larger 5 m × 5 m terrain with 7 zones, travel cost becomes significant
-and the trade-off the `full` strategy optimizes for should start to matter
-more. Run it and report what the data ACTUALLY shows:
+**Measured result** (`results/scale_study.txt`, 15 seeds per scale, same 1.2 Wh
+budget, only the terrain size changes):
 
-```bash
-python -m astra.experiments.run_scale_study --seeds 15
-# → results/scale_study.csv + results/scale_study.txt (means at both scales)
-```
+| Scale | nearest | shortest | resource | **full (ours)** |
+|---|---|---|---|---|
+| 3 m testbed | 300.8 | 302.9 (+0.7%) | **345.6 (+14.9%)** | 337.2 (+12.1%) |
+| 5 m terrain | 173.3 | 173.3 (+0.0%) | 185.5 (+7.0%) | **188.6 (+8.8%)** |
 
-This is a **hypothesis, not a result**, until your table exists: write the
-actual means into the report and discuss whichever way they come out. Real
-lunar prospecting traverses are 100 m–km scale, where every wasted metre is
-expensive — argue from your measured trend, not from intuition. (Note: at
-5 m the same 1.2 Wh energy budget buys fewer site round-trips, so expect ALL
-strategies' g/Wh to drop at scale; the interesting question is whether the
-*gap between* strategies changes.)
+(values are g/Wh; improvement over `nearest` in brackets)
+
+What the data shows — report this trend, it is the best discussion material
+in the project:
+
+1. **Every strategy loses efficiency at scale** — the baseline drops 42.4 %
+   (300.8 → 173.3 g/Wh) because travel energy dominates on a big terrain.
+2. **The strategy RANKING changes with scale**: at testbed scale pure
+   resource-greedy leads (+14.9%); at 5 m the **full optimizer overtakes it
+   (+8.8% vs +7.0%)** — exactly the trade-off it optimizes for. The full
+   strategy reaches nearly the same yield as resource-greedy while travelling
+   8.4% less (27.7 m vs 30.2 m).
+3. Conclusion for the report: at prospecting-relevant distances (real
+   traverses are 100 m–km scale), value-per-energy decision making is not an
+   optimization detail — it is the difference between a viable mission and a
+   dead rover.
 
 ## 4. Real-rover experiments (Phase 11 of the guide)
 
