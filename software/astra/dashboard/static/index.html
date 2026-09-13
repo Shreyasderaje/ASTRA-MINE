@@ -175,7 +175,7 @@
 
 <script>
 "use strict";
-const sock = new WebSocket(`ws://${location.host}/ws`);
+let sock = null;   // created by connect() below
 let world = null, latest = null, lastDrawnMap = null;
 let mode = "sim";
 const cues = [];   // operator cue markers (real mode)
@@ -204,22 +204,28 @@ document.getElementById("map").addEventListener("click", (ev) => {
             message: `operator cue at (${x.toFixed(2)}, ${y.toFixed(2)}) m`});
 });
 
-sock.onopen = () => document.getElementById("conn").textContent = "LINK READY";
-sock.onclose = () => document.getElementById("conn").textContent = "LINK DOWN";
-sock.onmessage = (ev) => {
-  const msg = JSON.parse(ev.data);
-  if (msg.type === "world") { world = msg; }
-  else if (msg.type === "telemetry") { latest = msg; draw(); updateStats(msg); }
-  else if (msg.type === "event") { logEvent(msg); }
-  else if (msg.type === "status" && msg.status === "finished") {
-    logEvent({kind:"log", message:`MISSION COMPLETE: ${msg.done_reason} | ` +
-      `${msg.summary.delivered_g} g delivered, ${msg.summary.resource_per_wh} g/Wh`,
-      state:"DONE"});
-  }
-};
+function connect() {
+  sock = new WebSocket(`ws://${location.host}/ws`);
+  sock.onopen = () => document.getElementById("conn").textContent = "LINK READY";
+  sock.onclose = () => document.getElementById("conn").textContent = "LINK DOWN";
+  sock.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === "world") { world = msg; }
+    else if (msg.type === "telemetry") { latest = msg; draw(); updateStats(msg); }
+    else if (msg.type === "event") { logEvent(msg); }
+    else if (msg.type === "status" && msg.status === "finished") {
+      logEvent({kind:"log", message:`MISSION COMPLETE: ${msg.done_reason} | ` +
+        `${msg.summary.delivered_g} g delivered, ${msg.summary.resource_per_wh} g/Wh`,
+        state:"DONE"});
+    }
+  };
+}
+connect();
 
 function startMission() {
   document.getElementById("log").innerHTML = "";
+  // after a mission finishes the server closes the socket - reconnect
+  if (!sock || sock.readyState !== WebSocket.OPEN) connect();
   mode = document.getElementById("mode").value;
   const payload = {
     cmd: "start",
@@ -234,7 +240,12 @@ function startMission() {
     payload.station_port = document.getElementById("station_port").value.trim() || null;
     payload.camera = parseInt(document.getElementById("camera").value || "-1");
   }
-  sock.send(JSON.stringify(payload));
+  // give a freshly opened socket a moment, then send
+  const sendWhenOpen = (tries) => {
+    if (sock.readyState === WebSocket.OPEN) sock.send(JSON.stringify(payload));
+    else if (tries > 0) setTimeout(() => sendWhenOpen(tries - 1), 150);
+  };
+  sendWhenOpen(20);
 }
 function stopMission() { sock.send(JSON.stringify({cmd: "stop"})); }
 
