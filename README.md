@@ -22,7 +22,8 @@ astra-mine/
 │   ├── 03-ASSEMBLY-AND-WIRING.md    chassis build, full wiring tables, bring-up
 │   ├── 04-EXPERIMENTS-AND-REPORT.md how to run experiments + report structure
 │   ├── 05-TIMELINE-AND-ROLES.md     16-week plan + who does what
-│   └── 06-REAL-TIME-OPERATION.md    flashing, calibration, LIVE digital twin
+│   ├── 06-REAL-TIME-OPERATION.md    flashing, calibration, LIVE digital twin
+│   └── 07-PRESENTATION-SCRIPT.md    word-for-word class presentation script
 ├── firmware/
 │   ├── esp32_rover/esp32_rover.ino  ESP32 low-level controller (motors, sensors)
 │   └── station_node/station_node.ino processing station (HX711 load cell)
