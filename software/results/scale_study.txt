@@ -1,0 +1,23 @@
+ASTRA-MINE scale sensitivity study - 15 seeds, max 5 sites, energy budget 1.2 Wh at both scales
+==============================================================================
+
+--- 3 m x 3 m testbed (reference) ---
+strategy         delivered_g       energy_wh      distance_m          time_s resource_per_wh     sites_mined         replans      collisions
+nearest               201.42            0.68           15.14          271.44          300.78            5.00            0.60            0.00
+shortest              202.59            0.68           15.10          271.05          302.85            5.00            0.60            0.00
+resource              256.16            0.76           17.63          298.81          345.56            5.00            0.80            0.00
+full                  227.99            0.69           15.15          273.61          337.20            5.00            0.80            0.00
+
+--- 5 m x 5 m terrain (large) ---
+strategy         delivered_g       energy_wh      distance_m          time_s resource_per_wh     sites_mined         replans      collisions
+nearest               201.35            1.17           27.39          462.19          173.29            4.20            0.00            1.93
+shortest              201.35            1.17           27.39          462.19          173.29            4.20            0.00            1.93
+resource              222.79            1.20           30.19          471.51          185.49            2.87            0.00            1.93
+full                  218.77            1.17           27.66          461.65          188.56            3.93            0.00            1.93
+
+g/Wh improvement over 'nearest' baseline:
+  3 m x 3 m testbed (reference):  shortest: +0.7%   resource: +14.9%   full: +12.1%
+  5 m x 5 m terrain (large):  shortest: +0.0%   resource: +7.0%   full: +8.8%
+
+Nearest-strategy g/Wh by scale (how much efficiency is lost when travel matters):
+  3m: 300.8 g/Wh   5m: 173.3 g/Wh   change: -42.4%

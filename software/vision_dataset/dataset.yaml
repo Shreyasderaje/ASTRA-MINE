@@ -1,0 +1,5 @@
+path: C:\Users\k\.zcode\workspace\default\astra-mine\software\vision_dataset
+train: images/train
+val: images/val
+names:
+  0: resource_zone

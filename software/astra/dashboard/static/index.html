@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ASTRA-MINE | Mission Control</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #060a13; --panel: #0b1220; --panel2: #0f1930; --line: #1d2c4d;
+    --text: #d8e4ff; --dim: #6d82ad; --cyan: #29d3ff; --amber: #ffb03a;
+    --green: #3ddc84; --red: #ff5470;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(1200px 700px at 70% -10%, #0e1a33 0%, var(--bg) 60%);
+    color: var(--text); font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    min-height: 100vh; padding: 14px;
+  }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 12px; }
+  header h1 { font-size: 20px; letter-spacing: 3px; color: var(--cyan); }
+  header .sub { color: var(--dim); font-size: 12px; letter-spacing: 1px; }
+  header .spacer { flex: 1; }
+  .badge { font-size: 11px; padding: 3px 10px; border: 1px solid var(--line);
+           border-radius: 12px; color: var(--dim); }
+  .badge.live { color: var(--green); border-color: var(--green); }
+
+  .layout { display: grid; grid-template-columns: minmax(420px, 640px) 1fr; gap: 14px; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .panel h2 { font-size: 11px; letter-spacing: 2px; color: var(--dim); margin-bottom: 10px;
+              text-transform: uppercase; }
+
+  #mapwrap { position: relative; }
+  canvas { width: 100%; border-radius: 8px; background: #04070d; display: block; }
+  #statechip { position: absolute; top: 10px; left: 10px; font-size: 12px; letter-spacing: 2px;
+               background: rgba(4,8,16,0.75); border: 1px solid var(--line); padding: 4px 10px;
+               border-radius: 6px; color: var(--cyan); }
+  #tstamp { position: absolute; top: 10px; right: 10px; font-size: 12px; color: var(--dim);
+            background: rgba(4,8,16,0.75); padding: 4px 10px; border-radius: 6px; }
+
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  select, input { background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+                  border-radius: 6px; padding: 6px 8px; font-size: 13px; }
+  button { background: linear-gradient(180deg, #10305c, #0b1e3d); color: var(--text);
+           border: 1px solid #2a4a80; border-radius: 6px; padding: 7px 16px; font-size: 13px;
+           cursor: pointer; letter-spacing: 1px; }
+  button:hover { border-color: var(--cyan); color: var(--cyan); }
+  button.stop { border-color: #802a3a; }
+  button.stop:hover { color: var(--red); border-color: var(--red); }
+  label { color: var(--dim); font-size: 12px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+          padding: 8px 10px; }
+  .stat .v { font-size: 20px; font-weight: 600; color: var(--cyan); }
+  .stat .v.amber { color: var(--amber); }
+  .stat .v.green { color: var(--green); }
+  .stat .k { font-size: 10px; color: var(--dim); letter-spacing: 1px; margin-top: 2px;
+             text-transform: uppercase; }
+
+  .bar { height: 14px; background: var(--panel2); border: 1px solid var(--line);
+         border-radius: 8px; overflow: hidden; margin: 6px 0 12px; }
+  .bar > div { height: 100%; background: linear-gradient(90deg, #2ad3ff, #3ddc84);
+               width: 100%; transition: width 0.3s; }
+
+  #log { height: 210px; overflow-y: auto; font-family: Consolas, "Courier New", monospace;
+         font-size: 11px; line-height: 1.55; color: #9fb4dd; background: #05080f;
+         border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  #log .state { color: var(--amber); }
+  #log .ok { color: var(--green); }
+  #log .warn { color: var(--red); }
+  #decision { color: var(--dim); font-size: 12px; min-height: 34px; line-height: 1.5;
+              margin-bottom: 10px; }
+  #decision b { color: var(--amber); }
+  .states { display: flex; gap: 4px; margin: 4px 0 12px; flex-wrap: wrap; }
+  .states span { font-size: 10px; letter-spacing: 1px; padding: 4px 8px; border-radius: 10px;
+                 border: 1px solid var(--line); color: var(--dim); }
+  .states span.on { color: #04121a; background: var(--cyan); border-color: var(--cyan);
+                    font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>&#9788; ASTRA-MINE</h1>
+  <div class="sub">AUTONOMOUS RESOURCE PROSPECTING &nbsp;|&nbsp; SPPN SPACE RESEARCH TEAM</div>
+  <div class="spacer"></div>
+  <div class="badge" id="conn">CONNECTING</div>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="panel">
+      <h2>Lunar Analogue Testbed &mdash; Digital Twin</h2>
+      <div id="mapwrap">
+        <canvas id="map" width="640" height="640"></canvas>
+        <div id="statechip">IDLE</div>
+        <div id="tstamp">t = 0.0 s</div>
+      </div>
+      <div class="controls">
+        <label>Mode</label>
+        <select id="mode" onchange="modeChanged()">
+          <option value="sim" selected>SIMULATION</option>
+          <option value="real">REAL ROVER</option>
+        </select>
+        <label>Strategy</label>
+        <select id="strategy">
+          <option value="full">full (resource-energy-risk)</option>
+          <option value="nearest">nearest</option>
+          <option value="shortest">shortest path</option>
+          <option value="resource">resource-greedy</option>
+        </select>
+        <span id="sim-only" style="display:contents">
+          <label>Seed</label>
+          <input id="seed" type="number" value="7" min="1" max="999" style="width:70px">
+          <label>Speed</label>
+          <select id="speed">
+            <option value="2">2&times;</option>
+            <option value="4" selected>4&times;</option>
+            <option value="8">8&times;</option>
+            <option value="50">max</option>
+          </select>
+        </span>
+        <span id="real-only" style="display:none">
+          <label>Rover port</label>
+          <input id="port" type="text" value="COM5" style="width:80px">
+          <label>Station port</label>
+          <input id="station_port" type="text" value="" placeholder="optional" style="width:80px">
+          <label>Camera</label>
+          <input id="camera" type="number" value="-1" min="-1" max="8" style="width:56px">
+        </span>
+        <button id="btn-start" onclick="startMission()">&#9654; LAUNCH</button>
+        <button class="stop" onclick="stopMission()">&#9632; ABORT</button>
+      </div>
+      <div id="real-hint" style="display:none; color:var(--dim); font-size:11px; margin-top:8px">
+        REAL mode: the map starts unknown. Rocks appear as the ToF discovers them.
+        <b style="color:var(--amber)">Click the map to cue a resource zone</b> (operator cueing,
+        like orbiter data cues real rovers). The rover drives at real speed.
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel" style="margin-bottom:14px">
+      <h2>Subsystem Status</h2>
+      <div class="states">
+        <span id="st-SURVEY">SURVEY</span><span id="st-SELECT">SELECT</span>
+        <span id="st-NAVIGATE">NAVIGATE</span><span id="st-MINE">MINE</span>
+        <span id="st-RETURN">RETURN</span><span id="st-DONE">DONE</span>
+      </div>
+      <div class="grid">
+        <div class="stat"><div class="v" id="v-batt">100%</div><div class="k">Battery</div></div>
+        <div class="stat"><div class="v" id="v-energy">0 Wh</div><div class="k">Energy used</div></div>
+        <div class="stat"><div class="v" id="v-dist">0 m</div><div class="k">Distance</div></div>
+        <div class="stat"><div class="v green" id="v-gwh">0</div><div class="k">g / Wh</div></div>
+        <div class="stat"><div class="v green" id="v-deliv">0 g</div><div class="k">Delivered</div></div>
+        <div class="stat"><div class="v amber" id="v-hop">0 g</div><div class="k">Hopper</div></div>
+        <div class="stat"><div class="v" id="v-sites">0</div><div class="k">Sites mined</div></div>
+        <div class="stat"><div class="v" id="v-cov">0%</div><div class="k">Map coverage</div></div>
+        <div class="stat"><div class="v" id="v-col">0</div><div class="k">Collisions</div></div>
+        <div class="stat" id="tof-tile" style="display:none"><div class="v" id="v-tof">-</div><div class="k">ToF range</div></div>
+      </div>
+      <h2 style="margin-top:12px">Battery Reserve</h2>
+      <div class="bar"><div id="battbar" style="width:100%"></div></div>
+      <h2>Current AI Decision</h2>
+      <div id="decision">Awaiting mission start&hellip;</div>
+    </div>
+
+    <div class="panel">
+      <h2>Mission Event Log</h2>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const sock = new WebSocket(`ws://${location.host}/ws`);
+let world = null, latest = null, lastDrawnMap = null;
+let mode = "sim";
+const cues = [];   // operator cue markers (real mode)
+
+function modeChanged() {
+  mode = document.getElementById("mode").value;
+  const real = mode === "real";
+  document.getElementById("sim-only").style.display = real ? "none" : "contents";
+  document.getElementById("real-only").style.display = real ? "contents" : "none";
+  document.getElementById("real-hint").style.display = real ? "block" : "none";
+  document.getElementById("tof-tile").style.display = real ? "" : "none";
+  document.getElementById("statechip").textContent = real ? "REAL — IDLE" : "IDLE";
+}
+
+// click-to-cue: real mode only - tell the rover's brain there is resource here
+document.getElementById("map").addEventListener("click", (ev) => {
+  if (mode !== "real" || !world) return;
+  const cv = document.getElementById("map"), rect = cv.getBoundingClientRect();
+  const sx = cv.width / rect.width, sy = cv.height / rect.height;
+  const px = (ev.clientX - rect.left) * sx, py = (ev.clientY - rect.top) * sy;
+  const x = px / cv.width * world.size_m;
+  const y = (1 - py / cv.height) * world.size_m;
+  cues.push({x, y});
+  sock.send(JSON.stringify({cmd: "mark", x: x, y: y}));
+  logEvent({kind: "log", state: latest ? latest.state : "IDLE", t: latest ? latest.t : 0,
+            message: `operator cue at (${x.toFixed(2)}, ${y.toFixed(2)}) m`});
+});
+
+sock.onopen = () => document.getElementById("conn").textContent = "LINK READY";
+sock.onclose = () => document.getElementById("conn").textContent = "LINK DOWN";
+sock.onmessage = (ev) => {
+  const msg = JSON.parse(ev.data);
+  if (msg.type === "world") { world = msg; }
+  else if (msg.type === "telemetry") { latest = msg; draw(); updateStats(msg); }
+  else if (msg.type === "event") { logEvent(msg); }
+  else if (msg.type === "status" && msg.status === "finished") {
+    logEvent({kind:"log", message:`MISSION COMPLETE: ${msg.done_reason} | ` +
+      `${msg.summary.delivered_g} g delivered, ${msg.summary.resource_per_wh} g/Wh`,
+      state:"DONE"});
+  }
+};
+
+function startMission() {
+  document.getElementById("log").innerHTML = "";
+  mode = document.getElementById("mode").value;
+  const payload = {
+    cmd: "start",
+    mode: mode,
+    strategy: document.getElementById("strategy").value,
+  };
+  if (mode === "sim") {
+    payload.seed = parseInt(document.getElementById("seed").value || "7");
+    payload.speed = parseFloat(document.getElementById("speed").value);
+  } else {
+    payload.port = document.getElementById("port").value.trim() || "COM5";
+    payload.station_port = document.getElementById("station_port").value.trim() || null;
+    payload.camera = parseInt(document.getElementById("camera").value || "-1");
+  }
+  sock.send(JSON.stringify(payload));
+}
+function stopMission() { sock.send(JSON.stringify({cmd: "stop"})); }
+
+const colorForProb = (p) => {
+  // 0 -> dark blue-grey, 1 -> hot green-yellow
+  if (p <= 0.2) return null;
+  const t = Math.min(1, (p - 0.2) / 0.8);
+  const r = Math.round(40 + 180 * t), g = Math.round(90 + 150 * t), b = Math.round(200 - 160 * t);
+  return `rgba(${r},${g},${b},${0.25 + 0.6 * t})`;
+};
+
+function draw() {
+  if (!world) return;
+  const cv = document.getElementById("map"), ctx = cv.getContext("2d");
+  const n = world.n, cell = cv.width / n, size = world.size_m;
+  const wx = (x) => x / size * cv.width;
+  const wy = (y) => cv.height - (y / size * cv.height); // +y up
+
+  // terrain base: elevation shading + rocks
+  if (!draw.terrainCache || draw.terrainWorld !== world) {
+    const off = document.createElement("canvas"); off.width = cv.width; off.height = cv.height;
+    const octx = off.getContext("2d");
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const el = world.elevation[r][c], ro = world.roughness[r][c];
+      const base = 34 + Math.max(-30, Math.min(40, el * 300));
+      if (ro >= 0.95) octx.fillStyle = "#59617a";
+      else octx.fillStyle = `rgb(${Math.round(base*0.9)},${Math.round(base*0.95)},${Math.round(base*1.15)})`;
+      octx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
+    }
+    draw.terrainCache = off; draw.terrainWorld = world;
+  }
+  ctx.drawImage(draw.terrainCache, 0, 0);
+
+  // resource probability heat overlay
+  if (latest && latest.prob_map) {
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const col = colorForProb(latest.prob_map[r][c]);
+      if (col) { ctx.fillStyle = col; ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5); }
+    }
+    lastDrawnMap = latest.prob_map;
+  }
+
+  // real mode: rocks discovered by the ToF sensor (no ground truth exists)
+  if (latest && latest.blocked) {
+    ctx.fillStyle = "rgba(120,90,110,0.9)";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++)
+      if (latest.blocked[r][c]) ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
+  }
+
+  // operator cue markers (real mode)
+  ctx.strokeStyle = "rgba(255,176,58,0.95)"; ctx.lineWidth = 1.6;
+  cues.forEach(mk => {
+    ctx.beginPath(); ctx.arc(wx(mk.x), wy(mk.y), 7, 0, Math.PI * 2); ctx.stroke();
+  });
+
+  // station + start markers
+  const st = world.station_xy, s0 = world.start_xy;
+  ctx.strokeStyle = "#29d3ff"; ctx.lineWidth = 2;
+  ctx.strokeRect(wx(st[0]) - 7, wy(st[1]) - 7, 14, 14);
+  ctx.fillStyle = "#29d3ff"; ctx.font = "10px monospace";
+  ctx.fillText("STATION", wx(st[0]) - 24, wy(st[1]) + 22);
+
+  // planned path
+  if (latest && latest.path && latest.path.length) {
+    ctx.strokeStyle = "rgba(255,176,58,0.9)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    latest.path.forEach((p, i) => i ? ctx.lineTo(wx(p[0]), wy(p[1])) : ctx.moveTo(wx(p[0]), wy(p[1])));
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // target marker
+  if (latest && latest.target) {
+    const [tr, tc] = latest.target;
+    const tx = (tc + 0.5) / n * cv.width, ty = cv.height - (tr + 0.5) / n * cv.height;
+    ctx.strokeStyle = "#ff5470"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(tx, ty, 10, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // rover (triangle pointing along heading)
+  if (latest) {
+    const {x, y, h} = latest.pose;
+    const px = wx(x), py = wy(y);
+    ctx.save(); ctx.translate(px, py); ctx.rotate(-h);
+    ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#04121a";
+    ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-7, -6); ctx.lineTo(-7, 6); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // sensor footprint
+    ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.beginPath(); ctx.arc(0, 0, 0.45 / size * cv.width, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (latest) {
+    document.getElementById("statechip").textContent =
+      (latest.mode === "real" ? "REAL — " : "") + latest.state;
+    document.getElementById("tstamp").textContent =
+      `t = ${latest.t.toFixed(1)} s` + (latest.mode === "sim" ? ` | seed ${latest.seed}` : " | LIVE");
+  }
+}
+
+function updateStats(m) {
+  const set = (id, v) => document.getElementById(id).textContent = v;
+  set("v-batt", m.battery_pct.toFixed(0) + "%");
+  set("v-energy", m.energy_wh.toFixed(2) + " Wh");
+  set("v-dist", m.distance_m.toFixed(1) + " m");
+  set("v-gwh", m.g_per_wh.toFixed(0));
+  set("v-deliv", m.delivered_g.toFixed(0) + " g");
+  set("v-hop", m.hopper_g.toFixed(0) + " g");
+  set("v-sites", m.sites_mined);
+  set("v-cov", m.coverage_pct + "%");
+  set("v-col", m.collisions);
+  document.getElementById("battbar").style.width = m.battery_pct + "%";
+  if (m.tof_cm !== undefined) {
+    document.getElementById("v-tof").textContent =
+      (m.tof_cm < 0 ? "clear" : m.tof_cm.toFixed(0) + " cm");
+  }
+  for (const s of ["SURVEY","SELECT","NAVIGATE","MINE","RETURN","DONE"])
+    document.getElementById("st-" + s).classList.toggle("on", s === m.state);
+  if (m.target) {
+    document.getElementById("decision").innerHTML =
+      `Target cell <b>(${m.target[0]}, ${m.target[1]})</b> selected by <b>${m.strategy}</b> strategy &mdash; navigating&hellip;`;
+  }
+}
+
+function logEvent(ev) {
+  const box = document.getElementById("log");
+  const line = document.createElement("div");
+  const cls = ev.kind === "done" ? "warn" : (ev.kind === "delivered" || ev.kind === "mined") ? "ok" : "state";
+  line.className = cls;
+  line.textContent = `[t=${(ev.t ?? 0).toFixed(1)}s] [${ev.state ?? "-"}] ${ev.message ?? ev.reason ?? ""}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+  if (ev.kind === "decision" || ev.reason) {
+    document.getElementById("decision").innerHTML =
+      `<b>Decision:</b> cell (${ev.cell ?? "-"}) &mdash; ${ev.reason ?? ""}`;
+  }
+}
+</script>
+</body>
+</html>

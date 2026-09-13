@@ -1,0 +1,19 @@
+# Core
+numpy>=1.26
+matplotlib>=3.8
+
+# Mission Control dashboard
+fastapi>=0.110
+uvicorn>=0.29
+
+# Vision (camera / images)
+opencv-python>=4.9
+
+# Real rover link (only needed when connecting the ESP32)
+pyserial>=3.8
+
+# Testing
+pytest>=8.0
+
+# Optional: YOLO training/inference upgrade for the vision pipeline
+# ultralytics>=8.2
