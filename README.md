@@ -18,6 +18,7 @@ astra-mine/
 ├── docs/
 │   ├── 01-STEP-BY-STEP-GUIDE.md     THE master guide: zero → finished project
 │   ├── 02-HARDWARE-BOM.md           every part, price, and why it's needed
+│   ├── 02b-LOW-BUDGET-JUGAAD.md     student build at ₹5k–9k: same science, frugal parts
 │   ├── 03-ASSEMBLY-AND-WIRING.md    chassis build, full wiring tables, bring-up
 │   ├── 04-EXPERIMENTS-AND-REPORT.md how to run experiments + report structure
 │   ├── 05-TIMELINE-AND-ROLES.md     16-week plan + who does what
